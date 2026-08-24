@@ -1,0 +1,40 @@
+# Build directories
+build/
+bin/
+out/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+!/Makefile
+
+# Qt / MOC / RCC generated files
+*_autogen/
+qrc_*.cpp
+moc_*.cpp
+ui_*.h
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*~
+*.bak
+.DS_Store
+.clangd/
+
+# Core dumps and logs
+core
+core.*
+*.log

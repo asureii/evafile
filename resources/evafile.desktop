@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Name=EvaFile
+GenericName=File Manager
+Comment=Modern Dolphin-inspired file manager with Crimson Flame theming
+Icon=evafile
+Exec=/home/camellia/.local/bin/evafile %U
+TryExec=/home/camellia/.local/bin/evafile
+Terminal=false
+Categories=System;FileTools;FileManager;Qt;
+MimeType=inode/directory;
+Keywords=files;folders;browser;manager;dolphin;explorer;eva;
+StartupNotify=true
+StartupWMClass=EvaFile
+
+Actions=NewWindow;
+
+[Desktop Action NewWindow]
+Name=New Window
+Exec=/home/camellia/.local/bin/evafile
