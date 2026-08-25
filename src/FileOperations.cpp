@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QElapsedTimer>
 #include <QRegularExpression>
+#include <QProcess>
 #include <filesystem>
 #include <system_error>
 
@@ -153,6 +154,131 @@ bool FileOperationWorker::deleteRecursive(const QString& path) {
     }
 }
 
+bool FileOperationWorker::extractZipArchive(const QString& zipFile, const QString& destDir) {
+    if (m_isCancelled) return false;
+    QFileInfo fi(zipFile);
+    if (!fi.exists()) return false;
+
+    QDir().mkpath(destDir);
+
+    m_progress.currentFile = fi.fileName();
+    m_progress.percent = 25;
+    emit progress(m_progress);
+
+    // Try unzip
+    QProcess proc;
+    proc.start("unzip", {"-q", "-o", zipFile, "-d", destDir});
+    if (proc.waitForStarted(2000) && proc.waitForFinished(120000) && proc.exitCode() == 0) {
+        m_progress.percent = 100;
+        m_progress.filesDone = 1;
+        emit progress(m_progress);
+        return true;
+    }
+
+    // Fallback 1: bsdtar
+    QProcess bsdtarProc;
+    bsdtarProc.start("bsdtar", {"-xf", zipFile, "-C", destDir});
+    if (bsdtarProc.waitForStarted(2000) && bsdtarProc.waitForFinished(120000) && bsdtarProc.exitCode() == 0) {
+        m_progress.percent = 100;
+        m_progress.filesDone = 1;
+        emit progress(m_progress);
+        return true;
+    }
+
+    // Fallback 2: python zipfile module
+    QProcess pyProc;
+    pyProc.start("python3", {"-m", "zipfile", "-e", zipFile, destDir});
+    if (pyProc.waitForStarted(2000) && pyProc.waitForFinished(120000) && pyProc.exitCode() == 0) {
+        m_progress.percent = 100;
+        m_progress.filesDone = 1;
+        emit progress(m_progress);
+        return true;
+    }
+
+    return false;
+}
+
+bool FileOperationWorker::compressZipArchive(const QStringList& sources, const QString& zipFile) {
+    if (m_isCancelled || sources.isEmpty()) return false;
+
+    m_progress.currentFile = QFileInfo(zipFile).fileName();
+    m_progress.percent = 25;
+    emit progress(m_progress);
+
+    if (QFile::exists(zipFile)) {
+        QFile::remove(zipFile);
+    }
+
+    QFileInfo firstFi(sources.first());
+    QString workingDir = firstFi.absolutePath();
+
+    // Try zip command
+    QStringList zipArgs;
+    zipArgs << "-r" << "-q" << zipFile;
+    for (const QString& src : sources) {
+        QFileInfo fi(src);
+        if (fi.absolutePath() == workingDir) {
+            zipArgs << fi.fileName();
+        } else {
+            zipArgs << src;
+        }
+    }
+
+    QProcess proc;
+    proc.setWorkingDirectory(workingDir);
+    proc.start("zip", zipArgs);
+    if (proc.waitForStarted(2000) && proc.waitForFinished(120000) && proc.exitCode() == 0) {
+        m_progress.percent = 100;
+        m_progress.filesDone = sources.size();
+        emit progress(m_progress);
+        return true;
+    }
+
+    // Fallback 1: bsdtar
+    QProcess bsdtarProc;
+    bsdtarProc.setWorkingDirectory(workingDir);
+    QStringList tarArgs;
+    tarArgs << "-a" << "-cf" << zipFile;
+    for (const QString& src : sources) {
+        tarArgs << QFileInfo(src).fileName();
+    }
+    bsdtarProc.start("bsdtar", tarArgs);
+    if (bsdtarProc.waitForStarted(2000) && bsdtarProc.waitForFinished(120000) && bsdtarProc.exitCode() == 0) {
+        m_progress.percent = 100;
+        m_progress.filesDone = sources.size();
+        emit progress(m_progress);
+        return true;
+    }
+
+    // Fallback 2: python zipfile module
+    QString pyScript =
+        "import zipfile, os, sys\n"
+        "zip_path = sys.argv[1]\n"
+        "sources = sys.argv[2:]\n"
+        "with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:\n"
+        "    for src in sources:\n"
+        "        if os.path.isdir(src):\n"
+        "            for root, _, files in os.walk(src):\n"
+        "                for f in files:\n"
+        "                    p = os.path.join(root, f)\n"
+        "                    zf.write(p, os.path.relpath(p, os.path.dirname(src)))\n"
+        "        elif os.path.isfile(src):\n"
+        "            zf.write(src, os.path.basename(src))\n";
+    QProcess pyProc;
+    QStringList pyArgs;
+    pyArgs << "-c" << pyScript << zipFile;
+    for (const QString& src : sources) pyArgs << src;
+    pyProc.start("python3", pyArgs);
+    if (pyProc.waitForStarted(2000) && pyProc.waitForFinished(120000) && pyProc.exitCode() == 0) {
+        m_progress.percent = 100;
+        m_progress.filesDone = sources.size();
+        emit progress(m_progress);
+        return true;
+    }
+
+    return false;
+}
+
 void FileOperationWorker::run() {
     m_progress.filesTotal = m_sources.size();
     m_progress.filesDone = 0;
@@ -160,25 +286,35 @@ void FileOperationWorker::run() {
 
     bool allSuccess = true;
 
-    for (const QString& src : m_sources) {
-        if (m_isCancelled) break;
+    if (m_type == OpType::ExtractZip) {
+        if (!m_sources.isEmpty()) {
+            allSuccess = extractZipArchive(m_sources.first(), m_destination);
+        }
+    } else if (m_type == OpType::CompressZip) {
+        allSuccess = compressZipArchive(m_sources, m_destination);
+    } else {
+        for (const QString& src : m_sources) {
+            if (m_isCancelled) break;
 
-        QFileInfo fi(src);
-        QString destPath = m_destination.isEmpty() ? QString() : (m_destination + "/" + fi.fileName());
+            QFileInfo fi(src);
+            QString destPath = m_destination.isEmpty() ? QString() : (m_destination + "/" + fi.fileName());
 
-        switch (m_type) {
-            case OpType::Copy:
-                if (!copyRecursive(src, destPath)) allSuccess = false;
-                break;
-            case OpType::Move:
-                if (!moveRecursive(src, destPath)) allSuccess = false;
-                break;
-            case OpType::Trash:
-                if (!trashFile(src)) allSuccess = false;
-                break;
-            case OpType::Delete:
-                if (!deleteRecursive(src)) allSuccess = false;
-                break;
+            switch (m_type) {
+                case OpType::Copy:
+                    if (!copyRecursive(src, destPath)) allSuccess = false;
+                    break;
+                case OpType::Move:
+                    if (!moveRecursive(src, destPath)) allSuccess = false;
+                    break;
+                case OpType::Trash:
+                    if (!trashFile(src)) allSuccess = false;
+                    break;
+                case OpType::Delete:
+                    if (!deleteRecursive(src)) allSuccess = false;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -258,6 +394,20 @@ void FileOperations::trash(const QStringList& paths) {
 void FileOperations::permanentDelete(const QStringList& paths) {
     emit operationStarted(QString("Permanently deleting %1 items...").arg(paths.size()));
     FileOperationWorker* worker = new FileOperationWorker(FileOperationWorker::OpType::Delete, paths, QString());
+    startWorker(worker);
+}
+
+void FileOperations::extractZip(const QString& zipPath, const QString& destination) {
+    QFileInfo fi(zipPath);
+    emit operationStarted(QString("Extracting %1...").arg(fi.fileName()));
+    FileOperationWorker* worker = new FileOperationWorker(FileOperationWorker::OpType::ExtractZip, {zipPath}, destination);
+    startWorker(worker);
+}
+
+void FileOperations::compressToZip(const QStringList& sources, const QString& destinationZip) {
+    QFileInfo fi(destinationZip);
+    emit operationStarted(QString("Compressing to %1...").arg(fi.fileName()));
+    FileOperationWorker* worker = new FileOperationWorker(FileOperationWorker::OpType::CompressZip, sources, destinationZip);
     startWorker(worker);
 }
 

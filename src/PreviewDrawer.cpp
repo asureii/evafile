@@ -12,6 +12,7 @@
 #include <QMimeType>
 #include <QIcon>
 #include <QFrame>
+#include <QProcess>
 
 #if defined(HAVE_POPPLER_QT6)
 #include <poppler-qt6.h>
@@ -166,11 +167,40 @@ void PreviewDrawer::setFile(const QString& filePath) {
         renderImagePreview(filePath);
     } else if (suffix == "pdf" || mimeName == "application/pdf") {
         renderPdfPreview(filePath);
+    } else if (suffix == "zip" || mimeName == "application/zip") {
+        renderArchivePreview(filePath);
     } else if (mimeName.startsWith("text/") || suffix == "txt" || suffix == "cpp" || suffix == "hpp" || suffix == "c" || suffix == "h" || suffix == "rs" || suffix == "py" || suffix == "json" || suffix == "md" || suffix == "toml" || suffix == "ini" || suffix == "conf" || suffix == "sh" || suffix == "cmake") {
         renderTextPreview(filePath);
     } else {
         renderGenericPreview(filePath);
     }
+}
+
+void PreviewDrawer::renderArchivePreview(const QString& path) {
+    m_imagePreviewLabel->setVisible(false);
+    m_textPreviewEdit->setVisible(true);
+
+    QProcess proc;
+    proc.start("unzip", {"-l", path});
+    if (proc.waitForStarted(1000) && proc.waitForFinished(3000) && proc.exitCode() == 0) {
+        QString out = QString::fromUtf8(proc.readAllStandardOutput());
+        if (!out.isEmpty()) {
+            m_textPreviewEdit->setPlainText(out);
+            return;
+        }
+    }
+
+    QProcess tarProc;
+    tarProc.start("bsdtar", {"-tf", path});
+    if (tarProc.waitForStarted(1000) && tarProc.waitForFinished(3000) && tarProc.exitCode() == 0) {
+        QString out = QString::fromUtf8(tarProc.readAllStandardOutput());
+        if (!out.isEmpty()) {
+            m_textPreviewEdit->setPlainText(out);
+            return;
+        }
+    }
+
+    m_textPreviewEdit->setPlainText(QString("ZIP Archive: %1").arg(QFileInfo(path).fileName()));
 }
 
 void PreviewDrawer::renderImagePreview(const QString& path) {

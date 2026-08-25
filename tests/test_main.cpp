@@ -79,6 +79,36 @@ private slots:
         conf.removeBookmark("/tmp/test_bookmark_123");
         QVERIFY(!conf.config().customBookmarks.contains("/tmp/test_bookmark_123"));
     }
+
+    void testZipCompressionAndExtraction() {
+        QTemporaryDir tempDir;
+        QVERIFY(tempDir.isValid());
+
+        QString sample = tempDir.path() + "/hello.txt";
+        QFile f(sample);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write("Hello EvaFile ZIP compatibility!");
+        f.close();
+
+        QString targetZip = tempDir.path() + "/test.zip";
+        FileOperationWorker compressWorker(FileOperationWorker::OpType::CompressZip, {sample}, targetZip);
+        compressWorker.run();
+
+        QVERIFY(QFile::exists(targetZip));
+        QVERIFY(QFileInfo(targetZip).size() > 0);
+
+        QString extractDir = tempDir.path() + "/extracted";
+        FileOperationWorker extractWorker(FileOperationWorker::OpType::ExtractZip, {targetZip}, extractDir);
+        extractWorker.run();
+
+        QVERIFY(QDir(extractDir).exists());
+        QVERIFY(QFile::exists(extractDir + "/hello.txt"));
+
+        QFile extractedFile(extractDir + "/hello.txt");
+        QVERIFY(extractedFile.open(QIODevice::ReadOnly));
+        QCOMPARE(QString::fromUtf8(extractedFile.readAll()), QString("Hello EvaFile ZIP compatibility!"));
+        extractedFile.close();
+    }
 };
 
 QTEST_MAIN(TestEvaFile)

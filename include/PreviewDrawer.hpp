@@ -27,6 +27,7 @@ private slots:
 private:
     void renderImagePreview(const QString& path);
     void renderPdfPreview(const QString& path);
+    void renderArchivePreview(const QString& path);
     void renderTextPreview(const QString& path);
     void renderGenericPreview(const QString& path);
     QString formatSize(qint64 bytes) const;

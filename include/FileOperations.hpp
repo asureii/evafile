@@ -29,7 +29,7 @@ struct OperationProgress {
 class FileOperationWorker : public QObject {
     Q_OBJECT
 public:
-    enum class OpType { Copy, Move, Trash, Delete };
+    enum class OpType { Copy, Move, Trash, Delete, ExtractZip, CompressZip };
 
     FileOperationWorker(OpType type, const QStringList& sources, const QString& destination);
 
@@ -48,6 +48,8 @@ private:
     bool moveRecursive(const QString& src, const QString& dst);
     bool trashFile(const QString& path);
     bool deleteRecursive(const QString& path);
+    bool extractZipArchive(const QString& zipFile, const QString& destDir);
+    bool compressZipArchive(const QStringList& sources, const QString& zipFile);
 
     QString generateAutoRename(const QString& targetPath);
 
@@ -68,6 +70,8 @@ public:
     void move(const QStringList& sources, const QString& destination);
     void trash(const QStringList& paths);
     void permanentDelete(const QStringList& paths);
+    void extractZip(const QString& zipPath, const QString& destination);
+    void compressToZip(const QStringList& sources, const QString& destinationZip);
     bool createDirectory(const QString& parentPath, const QString& name);
     bool createFile(const QString& parentPath, const QString& name);
     bool rename(const QString& oldPath, const QString& newName);

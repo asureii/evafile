@@ -10,6 +10,7 @@
 #include <QMenu>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QFileDialog>
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QMimeData>
@@ -336,6 +337,9 @@ void FileView::contextMenuEvent(QContextMenuEvent* event) {
     QStringList sel = selectedPaths();
 
     if (!sel.isEmpty()) {
+        QFileInfo firstFi(sel.first());
+        bool isSingleZip = (sel.size() == 1) && firstFi.isFile() && (firstFi.suffix().compare("zip", Qt::CaseInsensitive) == 0);
+
         // Selection specific actions
         menu.addAction(QIcon(":/icons/folder-open.svg"), "Open", [this, sel]() {
             if (QFileInfo(sel.first()).isDir()) setPath(sel.first());
@@ -353,6 +357,31 @@ void FileView::contextMenuEvent(QContextMenuEvent* event) {
             menu.addAction(QIcon(":/icons/sort.svg"), "Smart Sort with EvaSort", [sel, this]() {
                 QString dir = QFileInfo(sel.first()).isDir() ? sel.first() : m_currentPath;
                 EvaSuiteBridge::sortWithEvaSort(dir, this);
+            });
+        }
+
+        // ZIP Extract / Compress Actions
+        if (isSingleZip) {
+            menu.addSeparator();
+            menu.addAction(QIcon(":/icons/file-archive.svg"), "Extract Here", [this, sel]() {
+                FileOperations::instance().extractZip(sel.first(), m_currentPath);
+            });
+            menu.addAction(QIcon(":/icons/folder.svg"), QString("Extract to \"%1/\"").arg(firstFi.completeBaseName()), [this, sel, firstFi]() {
+                QString targetDir = m_currentPath + "/" + firstFi.completeBaseName();
+                FileOperations::instance().extractZip(sel.first(), targetDir);
+            });
+            menu.addAction(QIcon(":/icons/file-archive.svg"), "Extract to...", [this, sel]() {
+                QString targetDir = QFileDialog::getExistingDirectory(this, "Extract to Location", m_currentPath);
+                if (!targetDir.isEmpty()) {
+                    FileOperations::instance().extractZip(sel.first(), targetDir);
+                }
+            });
+        } else {
+            menu.addSeparator();
+            QString zipName = (sel.size() == 1) ? (firstFi.completeBaseName() + ".zip") : "Archive.zip";
+            menu.addAction(QIcon(":/icons/file-archive.svg"), QString("Compress to \"%1\"").arg(zipName), [this, sel, zipName]() {
+                QString targetZip = m_currentPath + "/" + zipName;
+                FileOperations::instance().compressToZip(sel, targetZip);
             });
         }
 
