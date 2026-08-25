@@ -45,6 +45,8 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
 | `F11` / `Space` | Toggle live preview drawer |
 | `Alt+Left` / `Alt+Right` | Navigate history back / forward |
 | `Alt+Up` | Navigate to parent directory |
+| `Ctrl+Shift+N` | Create new folder (with rename prompt) |
+| `Ctrl+Alt+N` | Create new file (with rename prompt) |
 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy / Cut / Paste selected files |
 | `Delete` | Move selected items to Trash |
 | `Shift+Delete` | Permanently delete selected items |
