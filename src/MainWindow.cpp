@@ -70,13 +70,22 @@ void MainWindow::setupUi() {
     m_previewDrawer->setVisible(ConfigManager::instance().config().showPreview);
     m_mainSplitter->addWidget(m_previewDrawer);
 
+    m_evalinkDrawer = new EvalinkDrawer(this);
+    m_evalinkDrawer->setVisible(false);
+    m_mainSplitter->addWidget(m_evalinkDrawer);
+
     m_mainSplitter->setCollapsible(0, true);
     m_mainSplitter->setCollapsible(1, false);
     m_mainSplitter->setCollapsible(2, true);
+    m_mainSplitter->setCollapsible(3, true);
 
     m_mainSplitter->setStretchFactor(0, 0);
     m_mainSplitter->setStretchFactor(1, 1);
     m_mainSplitter->setStretchFactor(2, 0);
+    m_mainSplitter->setStretchFactor(3, 0);
+
+    connect(m_evalinkDrawer, &EvalinkDrawer::openFolderRequested, this, &MainWindow::navigateTo);
+    connect(m_evalinkDrawer, &EvalinkDrawer::newDownloadRequested, this, &MainWindow::onNewEvalinkDownload);
 
     centralLayout->addWidget(m_mainSplitter);
     setCentralWidget(centralContainer);
@@ -128,7 +137,9 @@ void MainWindow::setupToolBar() {
 
     m_toolBar->addSeparator();
 
-    // Eva Suite Actions
+    // Evalink & Eva Suite Actions
+    m_actEvalink = m_toolBar->addAction(QIcon(":/icons/downloads.svg"), "Evalink Downloads (Ctrl+Shift+D)", this, &MainWindow::onToggleEvalinkDrawer);
+    m_actEvalink->setCheckable(true);
     m_actTerminal = m_toolBar->addAction(QIcon(":/icons/terminal.svg"), "Open EvaTerm (F4)", this, &MainWindow::onOpenTerminal);
     m_actSort = m_toolBar->addAction(QIcon(":/icons/sort.svg"), "Sort with EvaSort", this, &MainWindow::onSortWithEvaSort);
 }
@@ -139,6 +150,15 @@ void MainWindow::setupStatusBar() {
     m_statusLabel = new QLabel("Ready", this);
     m_spaceLabel = new QLabel(this);
 
+    m_evalinkStatusBtn = new QPushButton(this);
+    m_evalinkStatusBtn->setIcon(QIcon(":/icons/downloads.svg"));
+    m_evalinkStatusBtn->setStyleSheet(
+        "QPushButton { background-color: #360e10; color: #ff7373; border: 1px solid #5a1e22; border-radius: 4px; padding: 2px 8px; font-weight: bold; font-size: 11px; }"
+        "QPushButton:hover { background-color: #cf2824; color: #ffffff; }"
+    );
+    m_evalinkStatusBtn->setVisible(false);
+    connect(m_evalinkStatusBtn, &QPushButton::clicked, this, &MainWindow::onToggleEvalinkDrawer);
+
     m_opLabel = new QLabel(this);
     m_opLabel->setVisible(false);
 
@@ -147,9 +167,13 @@ void MainWindow::setupStatusBar() {
     m_opProgressBar->setVisible(false);
 
     bar->addWidget(m_statusLabel, 1);
+    bar->addPermanentWidget(m_evalinkStatusBtn);
     bar->addPermanentWidget(m_opLabel);
     bar->addPermanentWidget(m_opProgressBar);
     bar->addPermanentWidget(m_spaceLabel);
+
+    connect(&EvalinkManager::instance(), &EvalinkManager::tasksUpdated, this, &MainWindow::onEvalinkTasksUpdated);
+    connect(&EvalinkManager::instance(), &EvalinkManager::downloadCompleted, this, &MainWindow::onEvalinkDownloadCompleted);
 }
 
 void MainWindow::setupShortcuts() {
@@ -174,6 +198,8 @@ void MainWindow::setupShortcuts() {
     connect(new QShortcut(QKeySequence("Ctrl+F"), this), &QShortcut::activated, this, &MainWindow::onToggleSearch);
     connect(new QShortcut(QKeySequence("Ctrl+1"), this), &QShortcut::activated, this, &MainWindow::setDetailsView);
     connect(new QShortcut(QKeySequence("Ctrl+2"), this), &QShortcut::activated, this, &MainWindow::setIconsView);
+    connect(new QShortcut(QKeySequence("Ctrl+D"), this), &QShortcut::activated, this, &MainWindow::onNewEvalinkDownload);
+    connect(new QShortcut(QKeySequence("Ctrl+Shift+D"), this), &QShortcut::activated, this, &MainWindow::onToggleEvalinkDrawer);
     connect(new QShortcut(QKeySequence("Ctrl+Shift+N"), this), &QShortcut::activated, this, [this]() {
         SplitManager* sm = currentSplitManager();
         if (sm && sm->activeView()) sm->activeView()->promptCreateFolder();
@@ -405,6 +431,41 @@ void MainWindow::onSortWithEvaSort() {
     SplitManager* sm = currentSplitManager();
     if (sm) {
         EvaSuiteBridge::sortWithEvaSort(sm->activeView()->currentPath(), this);
+        onReload();
+    }
+}
+
+void MainWindow::onNewEvalinkDownload() {
+    SplitManager* sm = currentSplitManager();
+    QString currentDir = sm ? sm->activeView()->currentPath() : QDir::homePath() + "/Downloads";
+    EvalinkDialog dlg(currentDir, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        EvalinkManager::instance().addDownload(dlg.url(), dlg.destinationDirectory(), dlg.customFilename());
+        m_evalinkDrawer->setVisible(true);
+        m_actEvalink->setChecked(true);
+        m_statusLabel->setText("Download queued in Evalink: " + dlg.url());
+    }
+}
+
+void MainWindow::onToggleEvalinkDrawer() {
+    bool vis = !m_evalinkDrawer->isVisible();
+    m_evalinkDrawer->setVisible(vis);
+    m_actEvalink->setChecked(vis);
+}
+
+void MainWindow::onEvalinkTasksUpdated(const QList<EvalinkTask>& /*tasks*/, qint64 globalSpeed, int activeCount) {
+    if (activeCount > 0) {
+        m_evalinkStatusBtn->setText(QString("Evalink: %1 active (%2)").arg(activeCount).arg(EvalinkManager::formatSpeed(globalSpeed)));
+        m_evalinkStatusBtn->setVisible(true);
+    } else {
+        m_evalinkStatusBtn->setVisible(false);
+    }
+}
+
+void MainWindow::onEvalinkDownloadCompleted(const QString& name, const QString& dir) {
+    m_statusLabel->setText(QString("Download completed: %1").arg(name));
+    SplitManager* sm = currentSplitManager();
+    if (sm && sm->activeView()->currentPath() == dir) {
         onReload();
     }
 }

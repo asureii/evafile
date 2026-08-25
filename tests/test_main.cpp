@@ -4,6 +4,7 @@
 #include "../include/FileOperations.hpp"
 #include "../include/Config.hpp"
 #include "../include/ThemeEngine.hpp"
+#include "../include/EvalinkManager.hpp"
 
 class TestEvaFile : public QObject {
     Q_OBJECT
@@ -108,6 +109,16 @@ private slots:
         QVERIFY(extractedFile.open(QIODevice::ReadOnly));
         QCOMPARE(QString::fromUtf8(extractedFile.readAll()), QString("Hello EvaFile ZIP compatibility!"));
         extractedFile.close();
+    }
+
+    void testEvalinkManagerFormatting() {
+        QCOMPARE(EvalinkManager::formatBytes(0), QString("0 B"));
+        QCOMPARE(EvalinkManager::formatBytes(512), QString("512 B"));
+        QCOMPARE(EvalinkManager::formatBytes(1024 * 1024), QString("1.0 MB"));
+        QCOMPARE(EvalinkManager::formatBytes(1024ULL * 1024 * 1024 * 2), QString("2.00 GB"));
+
+        QCOMPARE(EvalinkManager::formatSpeed(0), QString("0 B/s"));
+        QCOMPARE(EvalinkManager::formatSpeed(1024 * 1024 * 15), QString("15.0 MB/s"));
     }
 };
 

@@ -1,6 +1,8 @@
 #include "FileView.hpp"
 #include "FileOperations.hpp"
 #include "EvaSuiteBridge.hpp"
+#include "EvalinkDialog.hpp"
+#include "EvalinkManager.hpp"
 #include "Config.hpp"
 #include <QHeaderView>
 #include <QDir>
@@ -514,6 +516,13 @@ void FileView::contextMenuEvent(QContextMenuEvent* event) {
             });
             menu.addSeparator();
         }
+
+        menu.addAction(QIcon(":/icons/downloads.svg"), "Download with Evalink... (Ctrl+D)", [this]() {
+            EvalinkDialog dlg(m_currentPath, this);
+            if (dlg.exec() == QDialog::Accepted) {
+                EvalinkManager::instance().addDownload(dlg.url(), dlg.destinationDirectory(), dlg.customFilename());
+            }
+        });
 
         menu.addAction(QIcon(":/icons/terminal.svg"), "Open in EvaTerm (F4)", [this]() {
             EvaSuiteBridge::openInEvaTerm(m_currentPath);

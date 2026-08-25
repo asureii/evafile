@@ -13,6 +13,9 @@
 #include "SplitManager.hpp"
 #include "PreviewDrawer.hpp"
 #include "FileOperations.hpp"
+#include "EvalinkDrawer.hpp"
+#include "EvalinkDialog.hpp"
+#include "EvalinkManager.hpp"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -50,6 +53,11 @@ private slots:
     void onOpenTerminal();
     void onSortWithEvaSort();
 
+    void onNewEvalinkDownload();
+    void onToggleEvalinkDrawer();
+    void onEvalinkTasksUpdated(const QList<EvalinkTask>& tasks, qint64 globalSpeed, int activeCount);
+    void onEvalinkDownloadCompleted(const QString& name, const QString& dir);
+
     void setDetailsView();
     void setIconsView();
 
@@ -80,6 +88,7 @@ private:
     BreadcrumbBar* m_breadcrumbBar;
     Sidebar* m_sidebar;
     PreviewDrawer* m_previewDrawer;
+    EvalinkDrawer* m_evalinkDrawer;
     QStackedWidget* m_tabStack;
     QSplitter* m_mainSplitter;
 
@@ -98,10 +107,12 @@ private:
     QAction* m_actIcons;
     QAction* m_actTerminal;
     QAction* m_actSort;
+    QAction* m_actEvalink;
 
     // Status bar
     QLabel* m_statusLabel;
     QLabel* m_spaceLabel;
     QProgressBar* m_opProgressBar;
     QLabel* m_opLabel;
+    QPushButton* m_evalinkStatusBtn;
 };

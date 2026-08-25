@@ -17,6 +17,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Svg
     SvgWidgets
     Multimedia
+    Network
 )
 
 find_package(PkgConfig REQUIRED)
@@ -42,6 +43,9 @@ set(SOURCES
     src/PreviewDrawer.cpp
     src/FileOperations.cpp
     src/EvaSuiteBridge.cpp
+    src/EvalinkManager.cpp
+    src/EvalinkDrawer.cpp
+    src/EvalinkDialog.cpp
     resources/evafile.qrc
 )
 
@@ -58,6 +62,9 @@ set(HEADERS
     include/PreviewDrawer.hpp
     include/FileOperations.hpp
     include/EvaSuiteBridge.hpp
+    include/EvalinkManager.hpp
+    include/EvalinkDrawer.hpp
+    include/EvalinkDialog.hpp
 )
 
 add_executable(evafile ${SOURCES} ${HEADERS})
@@ -69,6 +76,7 @@ target_link_libraries(evafile PRIVATE
     Qt6::Svg
     Qt6::SvgWidgets
     Qt6::Multimedia
+    Qt6::Network
     ${POPPLER_QT6_LIBRARIES}
 )
 
