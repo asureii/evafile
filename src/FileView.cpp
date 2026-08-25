@@ -325,10 +325,52 @@ void FileView::keyPressEvent(QKeyEvent* event) {
                 FileOperations::instance().copy(s_clipboardPaths, m_currentPath);
             }
         }
+    } else if (event->key() == Qt::Key_N && (event->modifiers() & Qt::ControlModifier) && (event->modifiers() & Qt::ShiftModifier)) {
+        promptCreateFolder();
+    } else if (event->key() == Qt::Key_N && (event->modifiers() & Qt::ControlModifier) && (event->modifiers() & Qt::AltModifier)) {
+        promptCreateFile();
     } else if (event->key() == Qt::Key_Escape && m_searchEdit->isVisible()) {
         showSearch(false);
     } else {
         QWidget::keyPressEvent(event);
+    }
+}
+
+void FileView::promptCreateFolder() {
+    QString defaultName = "New Folder";
+    if (QDir(m_currentPath + "/" + defaultName).exists()) {
+        int i = 1;
+        while (QDir(QString("%1/New Folder (%2)").arg(m_currentPath).arg(i)).exists()) {
+            i++;
+        }
+        defaultName = QString("New Folder (%1)").arg(i);
+    }
+
+    bool ok = false;
+    QString name = QInputDialog::getText(this, "Create Folder", "Enter folder name:", QLineEdit::Normal, defaultName, &ok);
+    if (ok && !name.trimmed().isEmpty()) {
+        FileOperations::instance().createDirectory(m_currentPath, name.trimmed());
+    }
+}
+
+void FileView::promptCreateFile(const QString& defaultName, const QString& templateContent) {
+    QString candidate = defaultName;
+    if (QFile::exists(m_currentPath + "/" + candidate)) {
+        QFileInfo fi(candidate);
+        QString base = fi.completeBaseName();
+        QString ext = fi.suffix();
+        int i = 1;
+        do {
+            if (ext.isEmpty()) candidate = QString("%1 (%2)").arg(base).arg(i);
+            else candidate = QString("%1 (%2).%3").arg(base).arg(i).arg(ext);
+            i++;
+        } while (QFile::exists(m_currentPath + "/" + candidate));
+    }
+
+    bool ok = false;
+    QString name = QInputDialog::getText(this, "Create File", "Enter file name:", QLineEdit::Normal, candidate, &ok);
+    if (ok && !name.trimmed().isEmpty()) {
+        FileOperations::instance().createFileWithContent(m_currentPath, name.trimmed(), templateContent);
     }
 }
 
@@ -424,19 +466,40 @@ void FileView::contextMenuEvent(QContextMenuEvent* event) {
         });
     } else {
         // Empty space context actions
-        menu.addAction(QIcon(":/icons/folder.svg"), "New Folder...", [this]() {
-            bool ok = false;
-            QString name = QInputDialog::getText(this, "New Folder", "Folder name:", QLineEdit::Normal, "New Folder", &ok);
-            if (ok && !name.isEmpty()) {
-                FileOperations::instance().createDirectory(m_currentPath, name);
-            }
+        menu.addAction(QIcon(":/icons/folder.svg"), "New Folder... (Ctrl+Shift+N)", [this]() {
+            promptCreateFolder();
         });
-        menu.addAction(QIcon(":/icons/file.svg"), "New Empty File...", [this]() {
-            bool ok = false;
-            QString name = QInputDialog::getText(this, "New File", "File name:", QLineEdit::Normal, "untitled.txt", &ok);
-            if (ok && !name.isEmpty()) {
-                FileOperations::instance().createFile(m_currentPath, name);
-            }
+        menu.addAction(QIcon(":/icons/file.svg"), "New Empty File... (Ctrl+Alt+N)", [this]() {
+            promptCreateFile("untitled.txt");
+        });
+
+        QMenu* templateMenu = menu.addMenu(QIcon(":/icons/file-code.svg"), "Create from Format / Template");
+        templateMenu->addAction(QIcon(":/icons/file.svg"), "Plain Text (.txt)", [this]() {
+            promptCreateFile("document.txt");
+        });
+        templateMenu->addAction(QIcon(":/icons/file.svg"), "Markdown (.md)", [this]() {
+            promptCreateFile("notes.md", "# Notes\n\n");
+        });
+        templateMenu->addAction(QIcon(":/icons/file-code.svg"), "C++ Source (.cpp)", [this]() {
+            promptCreateFile("main.cpp", "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n");
+        });
+        templateMenu->addAction(QIcon(":/icons/file-code.svg"), "C++ Header (.hpp)", [this]() {
+            promptCreateFile("header.hpp", "#pragma once\n\n");
+        });
+        templateMenu->addAction(QIcon(":/icons/file-code.svg"), "Python Script (.py)", [this]() {
+            promptCreateFile("script.py", "#!/usr/bin/env python3\n\ndef main():\n    print(\"Hello!\")\n\nif __name__ == \"__main__\":\n    main()\n");
+        });
+        templateMenu->addAction(QIcon(":/icons/file-code.svg"), "Shell Script (.sh)", [this]() {
+            promptCreateFile("script.sh", "#!/usr/bin/env bash\nset -euo pipefail\n\n");
+        });
+        templateMenu->addAction(QIcon(":/icons/file-code.svg"), "JSON Document (.json)", [this]() {
+            promptCreateFile("data.json", "{\n  \n}\n");
+        });
+        templateMenu->addAction(QIcon(":/icons/file-code.svg"), "TOML Config (.toml)", [this]() {
+            promptCreateFile("config.toml", "# Configuration\n");
+        });
+        templateMenu->addAction(QIcon(":/icons/file-code.svg"), "HTML Document (.html)", [this]() {
+            promptCreateFile("index.html", "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Document</title>\n</head>\n<body>\n  \n</body>\n</html>\n");
         });
 
         menu.addSeparator();

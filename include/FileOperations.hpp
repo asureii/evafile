@@ -74,6 +74,7 @@ public:
     void compressToZip(const QStringList& sources, const QString& destinationZip);
     bool createDirectory(const QString& parentPath, const QString& name);
     bool createFile(const QString& parentPath, const QString& name);
+    bool createFileWithContent(const QString& parentPath, const QString& name, const QString& content = QString());
     bool rename(const QString& oldPath, const QString& newName);
     static QString autoRenamePath(const QString& targetPath);
 

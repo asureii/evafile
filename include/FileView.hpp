@@ -47,6 +47,9 @@ public:
     QStringList selectedPaths() const;
     void showSearch(bool show);
 
+    void promptCreateFolder();
+    void promptCreateFile(const QString& defaultName = "untitled.txt", const QString& templateContent = QString());
+
 signals:
     void pathChanged(const QString& path);
     void fileSelected(const QString& path);

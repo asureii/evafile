@@ -417,9 +417,17 @@ bool FileOperations::createDirectory(const QString& parentPath, const QString& n
 }
 
 bool FileOperations::createFile(const QString& parentPath, const QString& name) {
+    return createFileWithContent(parentPath, name, QString());
+}
+
+bool FileOperations::createFileWithContent(const QString& parentPath, const QString& name, const QString& content) {
     QString fullPath = parentPath + "/" + name;
     QFile file(fullPath);
-    if (file.open(QIODevice::WriteOnly)) {
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (!content.isEmpty()) {
+            QTextStream out(&file);
+            out << content;
+        }
         file.close();
         return true;
     }

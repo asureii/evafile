@@ -174,6 +174,14 @@ void MainWindow::setupShortcuts() {
     connect(new QShortcut(QKeySequence("Ctrl+F"), this), &QShortcut::activated, this, &MainWindow::onToggleSearch);
     connect(new QShortcut(QKeySequence("Ctrl+1"), this), &QShortcut::activated, this, &MainWindow::setDetailsView);
     connect(new QShortcut(QKeySequence("Ctrl+2"), this), &QShortcut::activated, this, &MainWindow::setIconsView);
+    connect(new QShortcut(QKeySequence("Ctrl+Shift+N"), this), &QShortcut::activated, this, [this]() {
+        SplitManager* sm = currentSplitManager();
+        if (sm && sm->activeView()) sm->activeView()->promptCreateFolder();
+    });
+    connect(new QShortcut(QKeySequence("Ctrl+Alt+N"), this), &QShortcut::activated, this, [this]() {
+        SplitManager* sm = currentSplitManager();
+        if (sm && sm->activeView()) sm->activeView()->promptCreateFile();
+    });
     connect(new QShortcut(QKeySequence("Alt+Left"), this), &QShortcut::activated, this, &MainWindow::onBack);
     connect(new QShortcut(QKeySequence("Alt+Right"), this), &QShortcut::activated, this, &MainWindow::onForward);
     connect(new QShortcut(QKeySequence("Alt+Up"), this), &QShortcut::activated, this, &MainWindow::onUp);
