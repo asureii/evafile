@@ -23,6 +23,7 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
 - **Eva Suite Interoperability**:
   - `F4` or context menu: Launch EvaTerm directly in the current directory.
   - Context menu: Trigger EvaSort to organize messy folders automatically.
+  - `Ctrl+D` / `Ctrl+Shift+D`: Built-in Evalink download accelerator with live progress drawer, speed indicators, and auto-refresh on download completion.
 
 ---
 
@@ -39,6 +40,8 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
 | `Ctrl+F` | Open quick filter / search bar |
 | `Ctrl+1` | Switch to Details view |
 | `Ctrl+2` | Switch to Icons grid view |
+| `Ctrl+D` | Add new download with Evalink |
+| `Ctrl+Shift+D` | Toggle Evalink downloads drawer |
 | `F3` | Toggle dual-pane split view |
 | `F4` | Launch EvaTerm in current folder |
 | `F5` | Reload current directory |
