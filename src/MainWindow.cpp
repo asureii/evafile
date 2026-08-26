@@ -7,6 +7,8 @@
 #include <QStorageInfo>
 #include <QCloseEvent>
 #include <QApplication>
+#include <QGuiApplication>
+#include <QClipboard>
 #include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget* parent)
@@ -207,6 +209,15 @@ void MainWindow::setupShortcuts() {
     connect(new QShortcut(QKeySequence("Ctrl+Alt+N"), this), &QShortcut::activated, this, [this]() {
         SplitManager* sm = currentSplitManager();
         if (sm && sm->activeView()) sm->activeView()->promptCreateFile();
+    });
+    connect(new QShortcut(QKeySequence("Ctrl+Shift+C"), this), &QShortcut::activated, this, [this]() {
+        SplitManager* sm = currentSplitManager();
+        if (sm && sm->activeView()) {
+            QStringList sel = sm->activeView()->selectedPaths();
+            QString text = sel.isEmpty() ? sm->activeView()->currentPath() : sel.join("\n");
+            QGuiApplication::clipboard()->setText(text);
+            m_statusLabel->setText("Location copied to clipboard: " + text);
+        }
     });
     connect(new QShortcut(QKeySequence("Alt+Left"), this), &QShortcut::activated, this, &MainWindow::onBack);
     connect(new QShortcut(QKeySequence("Alt+Right"), this), &QShortcut::activated, this, &MainWindow::onForward);

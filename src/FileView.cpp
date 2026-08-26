@@ -327,6 +327,11 @@ void FileView::keyPressEvent(QKeyEvent* event) {
                 FileOperations::instance().copy(s_clipboardPaths, m_currentPath);
             }
         }
+    } else if (event->key() == Qt::Key_C && (event->modifiers() & Qt::ControlModifier) && (event->modifiers() & Qt::ShiftModifier)) {
+        QStringList sel = selectedPaths();
+        QString text = sel.isEmpty() ? m_currentPath : sel.join("\n");
+        QGuiApplication::clipboard()->setText(text);
+        emit statusMessageChanged(QString("Location copied: %1").arg(text));
     } else if (event->key() == Qt::Key_N && (event->modifiers() & Qt::ControlModifier) && (event->modifiers() & Qt::ShiftModifier)) {
         promptCreateFolder();
     } else if (event->key() == Qt::Key_N && (event->modifiers() & Qt::ControlModifier) && (event->modifiers() & Qt::AltModifier)) {
@@ -438,6 +443,11 @@ void FileView::contextMenuEvent(QContextMenuEvent* event) {
             s_clipboardPaths = sel;
             s_isCutOperation = false;
         });
+        menu.addAction(QIcon(":/icons/copy.svg"), "Copy Location (Ctrl+Shift+C)", [sel, this]() {
+            QString text = sel.join("\n");
+            QGuiApplication::clipboard()->setText(text);
+            emit statusMessageChanged(QString("Location copied: %1").arg(text));
+        });
 
         if (sel.size() == 1) {
             menu.addAction(QIcon(":/icons/rename.svg"), "Rename (F2)", [this, sel]() {
@@ -516,6 +526,11 @@ void FileView::contextMenuEvent(QContextMenuEvent* event) {
             });
             menu.addSeparator();
         }
+
+        menu.addAction(QIcon(":/icons/copy.svg"), "Copy Location (Ctrl+Shift+C)", [this]() {
+            QGuiApplication::clipboard()->setText(m_currentPath);
+            emit statusMessageChanged(QString("Location copied: %1").arg(m_currentPath));
+        });
 
         menu.addAction(QIcon(":/icons/downloads.svg"), "Download with Evalink... (Ctrl+D)", [this]() {
             EvalinkDialog dlg(m_currentPath, this);
