@@ -8,6 +8,7 @@ Rectangle {
     anchors.fill: parent
     color: Qt.rgba(0, 0, 0, 0.65)
     z: 100
+    opacity: 0.0
     visible: opacity > 0.001
 
     Behavior on opacity { NumberAnimation { duration: Theme.animNormal; easing.type: Theme.easeDecel } }
