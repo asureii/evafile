@@ -3,6 +3,7 @@
 #include "EvaSuiteBridge.hpp"
 #include "EvalinkDialog.hpp"
 #include "EvalinkManager.hpp"
+#include "DragDropHelper.hpp"
 #include "Config.hpp"
 #include <QHeaderView>
 #include <QDir>
@@ -93,6 +94,104 @@ void EvaItemDelegate::initStyleOption(QStyleOptionViewItem* option, const QModel
     }
 }
 
+// -----------------------------------------------------------------------------
+// EvaTreeView: Details View with Drag & Drop
+// -----------------------------------------------------------------------------
+EvaTreeView::EvaTreeView(FileView* fileView, QWidget* parent)
+    : QTreeView(parent), m_fileView(fileView)
+{
+    setDragEnabled(true);
+    setAcceptDrops(true);
+    setDropIndicatorShown(true);
+    setDragDropMode(QAbstractItemView::DragDrop);
+    setDefaultDropAction(Qt::MoveAction);
+}
+
+void EvaTreeView::startDrag(Qt::DropActions /*supportedActions*/) {
+    QStringList paths = m_fileView ? m_fileView->selectedPaths() : QStringList();
+    QIcon icon;
+    if (!paths.isEmpty() && m_fileView && m_fileView->model()) {
+        icon = m_fileView->model()->fileIcon(selectionModel()->currentIndex());
+    }
+    DragDropHelper::startDrag(this, paths, icon);
+}
+
+void EvaTreeView::dragEnterEvent(QDragEnterEvent* event) {
+    if (DragDropHelper::handleDragEnter(event)) {
+        event->acceptProposedAction();
+    } else {
+        QTreeView::dragEnterEvent(event);
+    }
+}
+
+void EvaTreeView::dragMoveEvent(QDragMoveEvent* event) {
+    if (DragDropHelper::handleDragMove(event)) {
+        event->acceptProposedAction();
+    } else {
+        QTreeView::dragMoveEvent(event);
+    }
+}
+
+void EvaTreeView::dropEvent(QDropEvent* event) {
+    QString currentPath = m_fileView ? m_fileView->currentPath() : QString();
+    QModelIndex idx = indexAt(event->position().toPoint());
+    QFileSystemModel* fsm = m_fileView ? m_fileView->model() : nullptr;
+    QString targetDir = currentPath;
+    if (idx.isValid() && fsm && fsm->isDir(idx)) {
+        targetDir = fsm->filePath(idx);
+    }
+    DragDropHelper::executeDrop(event, targetDir, this);
+}
+
+// -----------------------------------------------------------------------------
+// EvaListView: Icons Grid View with Drag & Drop
+// -----------------------------------------------------------------------------
+EvaListView::EvaListView(FileView* fileView, QWidget* parent)
+    : QListView(parent), m_fileView(fileView)
+{
+    setDragEnabled(true);
+    setAcceptDrops(true);
+    setDropIndicatorShown(true);
+    setDragDropMode(QAbstractItemView::DragDrop);
+    setDefaultDropAction(Qt::MoveAction);
+}
+
+void EvaListView::startDrag(Qt::DropActions /*supportedActions*/) {
+    QStringList paths = m_fileView ? m_fileView->selectedPaths() : QStringList();
+    QIcon icon;
+    if (!paths.isEmpty() && m_fileView && m_fileView->model()) {
+        icon = m_fileView->model()->fileIcon(selectionModel()->currentIndex());
+    }
+    DragDropHelper::startDrag(this, paths, icon);
+}
+
+void EvaListView::dragEnterEvent(QDragEnterEvent* event) {
+    if (DragDropHelper::handleDragEnter(event)) {
+        event->acceptProposedAction();
+    } else {
+        QListView::dragEnterEvent(event);
+    }
+}
+
+void EvaListView::dragMoveEvent(QDragMoveEvent* event) {
+    if (DragDropHelper::handleDragMove(event)) {
+        event->acceptProposedAction();
+    } else {
+        QListView::dragMoveEvent(event);
+    }
+}
+
+void EvaListView::dropEvent(QDropEvent* event) {
+    QString currentPath = m_fileView ? m_fileView->currentPath() : QString();
+    QModelIndex idx = indexAt(event->position().toPoint());
+    QFileSystemModel* fsm = m_fileView ? m_fileView->model() : nullptr;
+    QString targetDir = currentPath;
+    if (idx.isValid() && fsm && fsm->isDir(idx)) {
+        targetDir = fsm->filePath(idx);
+    }
+    DragDropHelper::executeDrop(event, targetDir, this);
+}
+
 FileView::FileView(QWidget* parent)
     : QWidget(parent)
 {
@@ -127,7 +226,7 @@ void FileView::setupModels() {
 
 void FileView::setupViews() {
     // 1. Details Tree View
-    m_treeView = new QTreeView(this);
+    m_treeView = new EvaTreeView(this, this);
     m_treeView->setModel(m_model);
     m_treeView->setItemDelegate(new EvaItemDelegate(m_treeView));
     m_treeView->setSortingEnabled(true);
@@ -145,7 +244,7 @@ void FileView::setupViews() {
     m_treeView->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
 
     // 2. Icons Grid View
-    m_listView = new QListView(this);
+    m_listView = new EvaListView(this, this);
     m_listView->setModel(m_model);
     m_listView->setItemDelegate(new EvaItemDelegate(m_listView));
     m_listView->setViewMode(QListView::IconMode);

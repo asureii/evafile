@@ -29,6 +29,38 @@ protected:
     void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override;
 };
 
+class FileView;
+
+class EvaTreeView : public QTreeView {
+    Q_OBJECT
+public:
+    explicit EvaTreeView(FileView* fileView, QWidget* parent = nullptr);
+
+protected:
+    void startDrag(Qt::DropActions supportedActions) override;
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dragMoveEvent(QDragMoveEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+
+private:
+    FileView* m_fileView;
+};
+
+class EvaListView : public QListView {
+    Q_OBJECT
+public:
+    explicit EvaListView(FileView* fileView, QWidget* parent = nullptr);
+
+protected:
+    void startDrag(Qt::DropActions supportedActions) override;
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dragMoveEvent(QDragMoveEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+
+private:
+    FileView* m_fileView;
+};
+
 class FileView : public QWidget {
     Q_OBJECT
 public:
@@ -49,6 +81,8 @@ public:
 
     void promptCreateFolder();
     void promptCreateFile(const QString& defaultName = "untitled.txt", const QString& templateContent = QString());
+
+    QFileSystemModel* model() const { return m_model; }
 
 signals:
     void pathChanged(const QString& path);
@@ -77,8 +111,8 @@ private:
 
     QFileSystemModel* m_model;
     EvaIconProvider* m_iconProvider;
-    QTreeView* m_treeView;
-    QListView* m_listView;
+    EvaTreeView* m_treeView;
+    EvaListView* m_listView;
     QStackedWidget* m_viewStack;
     QLineEdit* m_searchEdit;
 

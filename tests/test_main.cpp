@@ -1,10 +1,12 @@
 #include <QTest>
 #include <QTemporaryDir>
 #include <QFile>
+#include <QMimeData>
 #include "../include/FileOperations.hpp"
 #include "../include/Config.hpp"
 #include "../include/ThemeEngine.hpp"
 #include "../include/EvalinkManager.hpp"
+#include "../include/DragDropHelper.hpp"
 
 class TestEvaFile : public QObject {
     Q_OBJECT
@@ -119,6 +121,26 @@ private slots:
 
         QCOMPARE(EvalinkManager::formatSpeed(0), QString("0 B/s"));
         QCOMPARE(EvalinkManager::formatSpeed(1024 * 1024 * 15), QString("15.0 MB/s"));
+    }
+
+    void testDragDropMimeData() {
+        QTemporaryDir tempDir;
+        QVERIFY(tempDir.isValid());
+
+        QString file1 = tempDir.path() + "/sample.txt";
+        QFile f(file1);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write("drag drop test");
+        f.close();
+
+        QMimeData mime;
+        QList<QUrl> urls;
+        urls.append(QUrl::fromLocalFile(file1));
+        mime.setUrls(urls);
+
+        QVERIFY(mime.hasUrls());
+        QCOMPARE(mime.urls().size(), 1);
+        QCOMPARE(mime.urls().first().toLocalFile(), file1);
     }
 };
 

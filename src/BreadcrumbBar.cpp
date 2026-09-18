@@ -1,10 +1,50 @@
 #include "BreadcrumbBar.hpp"
+#include "DragDropHelper.hpp"
 #include <QDir>
 #include <QFileInfo>
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QShortcut>
+
+class BreadcrumbPill : public QPushButton {
+public:
+    explicit BreadcrumbPill(const QString& text, const QString& path, QWidget* parent = nullptr)
+        : QPushButton(text, parent), m_path(path)
+    {
+        setProperty("class", "breadcrumb-pill");
+        setProperty("path", path);
+        setAcceptDrops(true);
+    }
+
+protected:
+    void dragEnterEvent(QDragEnterEvent* event) override {
+        if (DragDropHelper::handleDragEnter(event)) {
+            event->acceptProposedAction();
+        } else {
+            QPushButton::dragEnterEvent(event);
+        }
+    }
+
+    void dragMoveEvent(QDragMoveEvent* event) override {
+        if (DragDropHelper::handleDragMove(event)) {
+            event->acceptProposedAction();
+        } else {
+            QPushButton::dragMoveEvent(event);
+        }
+    }
+
+    void dropEvent(QDropEvent* event) override {
+        if (!m_path.isEmpty() && QDir(m_path).exists()) {
+            DragDropHelper::executeDrop(event, m_path, this);
+        } else {
+            event->ignore();
+        }
+    }
+
+private:
+    QString m_path;
+};
 
 BreadcrumbBar::BreadcrumbBar(QWidget* parent)
     : QWidget(parent)
@@ -71,9 +111,7 @@ void BreadcrumbBar::updateBreadcrumbs() {
     QString accumulatedPath = "";
 
     // Root button
-    QPushButton* rootBtn = new QPushButton("/", m_pillContainer);
-    rootBtn->setProperty("class", "breadcrumb-pill");
-    rootBtn->setProperty("path", "/");
+    BreadcrumbPill* rootBtn = new BreadcrumbPill("/", "/", m_pillContainer);
     connect(rootBtn, &QPushButton::clicked, this, &BreadcrumbBar::onSegmentClicked);
     m_pillLayout->addWidget(rootBtn);
 
@@ -83,9 +121,7 @@ void BreadcrumbBar::updateBreadcrumbs() {
         m_pillLayout->addWidget(sep);
 
         accumulatedPath += "/" + parts[i];
-        QPushButton* btn = new QPushButton(parts[i], m_pillContainer);
-        btn->setProperty("class", "breadcrumb-pill");
-        btn->setProperty("path", accumulatedPath);
+        BreadcrumbPill* btn = new BreadcrumbPill(parts[i], accumulatedPath, m_pillContainer);
         connect(btn, &QPushButton::clicked, this, &BreadcrumbBar::onSegmentClicked);
         m_pillLayout->addWidget(btn);
     }

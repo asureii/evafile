@@ -46,6 +46,7 @@ set(SOURCES
     src/EvalinkManager.cpp
     src/EvalinkDrawer.cpp
     src/EvalinkDialog.cpp
+    src/DragDropHelper.cpp
     resources/evafile.qrc
 )
 
@@ -65,6 +66,7 @@ set(HEADERS
     include/EvalinkManager.hpp
     include/EvalinkDrawer.hpp
     include/EvalinkDialog.hpp
+    include/DragDropHelper.hpp
 )
 
 add_executable(evafile ${SOURCES} ${HEADERS})

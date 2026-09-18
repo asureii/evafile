@@ -14,6 +14,7 @@ set(TEST_SOURCES
     ../src/ThemeEngine.cpp
     ../src/EvaSuiteBridge.cpp
     ../src/EvalinkManager.cpp
+    ../src/DragDropHelper.cpp
     ../resources/evafile.qrc
 )
 
@@ -23,6 +24,7 @@ set(TEST_HEADERS
     ../include/ThemeEngine.hpp
     ../include/EvaSuiteBridge.hpp
     ../include/EvalinkManager.hpp
+    ../include/DragDropHelper.hpp
 )
 
 add_executable(test_evafile

@@ -1,5 +1,6 @@
 #include "Sidebar.hpp"
 #include "Config.hpp"
+#include "DragDropHelper.hpp"
 #include <QDir>
 #include <QStandardPaths>
 #include <QHeaderView>
@@ -7,6 +8,52 @@
 #include <QContextMenuEvent>
 #include <QIcon>
 #include <QStorageInfo>
+
+class SidebarTree : public QTreeWidget {
+public:
+    explicit SidebarTree(QWidget* parent = nullptr) : QTreeWidget(parent) {
+        setAcceptDrops(true);
+    }
+
+protected:
+    void dragEnterEvent(QDragEnterEvent* event) override {
+        if (DragDropHelper::handleDragEnter(event)) {
+            event->acceptProposedAction();
+        } else {
+            QTreeWidget::dragEnterEvent(event);
+        }
+    }
+
+    void dragMoveEvent(QDragMoveEvent* event) override {
+        QTreeWidgetItem* item = itemAt(event->position().toPoint());
+        if (item) {
+            QString path = item->data(0, Qt::UserRole).toString();
+            if (!path.isEmpty() && QDir(path).exists() && path != (QDir::homePath() + "/.local/share/Trash/files")) {
+                setCurrentItem(item);
+                event->acceptProposedAction();
+                return;
+            }
+        }
+        event->ignore();
+    }
+
+    void dragLeaveEvent(QDragLeaveEvent* event) override {
+        clearSelection();
+        QTreeWidget::dragLeaveEvent(event);
+    }
+
+    void dropEvent(QDropEvent* event) override {
+        QTreeWidgetItem* item = itemAt(event->position().toPoint());
+        if (item) {
+            QString targetDir = item->data(0, Qt::UserRole).toString();
+            if (!targetDir.isEmpty() && QDir(targetDir).exists() && targetDir != (QDir::homePath() + "/.local/share/Trash/files")) {
+                DragDropHelper::executeDrop(event, targetDir, this);
+                return;
+            }
+        }
+        event->ignore();
+    }
+};
 
 Sidebar::Sidebar(QWidget* parent)
     : QWidget(parent)
@@ -19,7 +66,7 @@ Sidebar::Sidebar(QWidget* parent)
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    m_tree = new QTreeWidget(this);
+    m_tree = new SidebarTree(this);
     m_tree->setHeaderHidden(true);
     m_tree->setRootIsDecorated(false);
     m_tree->setIndentation(10);

@@ -19,6 +19,7 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
   - Real-time SHA256 checksum calculator.
 - **Sidebar Places & Drives**: Access home, root, standard user folders (Documents, Downloads, Music, Pictures, Videos), mounted drives with live storage gauges, and user bookmarks.
 - **Asynchronous File Operations**: Multithreaded Copy, Move, Trash, and Delete with transfer progress reporting and automatic duplicate conflict resolution (`file (1).ext`).
+- **Interactive Drag and Drop**: Fluid, physics-aware drag-and-drop across file views, dual split panes (`F3`), sidebar places, breadcrumb pills, and external applications with Dolphin-style Move / Copy / Cancel action prompts and modifier keys (`Shift` to move, `Ctrl` to copy).
 - **Tiling Window Manager Ready**: Dynamic responsive layout tailored for Hyprland, Sway, and i3 with auto-collapsing panels, eliding tabs, and column resizing.
 - **Eva Suite Interoperability**:
   - `F4` or context menu: Launch EvaTerm directly in the current directory.
