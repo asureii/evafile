@@ -109,6 +109,10 @@ EvaTreeView::EvaTreeView(FileView* fileView, QWidget* parent)
 
 void EvaTreeView::startDrag(Qt::DropActions /*supportedActions*/) {
     QStringList paths = m_fileView ? m_fileView->selectedPaths() : QStringList();
+    if (paths.isEmpty() && selectionModel() && selectionModel()->currentIndex().isValid()) {
+        QFileSystemModel* fsm = m_fileView ? m_fileView->model() : nullptr;
+        if (fsm) paths.append(fsm->filePath(selectionModel()->currentIndex()));
+    }
     QIcon icon;
     if (!paths.isEmpty() && m_fileView && m_fileView->model()) {
         icon = m_fileView->model()->fileIcon(selectionModel()->currentIndex());
@@ -158,6 +162,10 @@ EvaListView::EvaListView(FileView* fileView, QWidget* parent)
 
 void EvaListView::startDrag(Qt::DropActions /*supportedActions*/) {
     QStringList paths = m_fileView ? m_fileView->selectedPaths() : QStringList();
+    if (paths.isEmpty() && selectionModel() && selectionModel()->currentIndex().isValid()) {
+        QFileSystemModel* fsm = m_fileView ? m_fileView->model() : nullptr;
+        if (fsm) paths.append(fsm->filePath(selectionModel()->currentIndex()));
+    }
     QIcon icon;
     if (!paths.isEmpty() && m_fileView && m_fileView->model()) {
         icon = m_fileView->model()->fileIcon(selectionModel()->currentIndex());
@@ -293,6 +301,15 @@ void FileView::setPath(const QString& path) {
 
     updateStatus();
     emit pathChanged(clean);
+}
+
+void FileView::reload() {
+    if (!QDir(m_currentPath).exists()) return;
+    m_model->setRootPath("");
+    QModelIndex rootIdx = m_model->setRootPath(m_currentPath);
+    m_treeView->setRootIndex(rootIdx);
+    m_listView->setRootIndex(rootIdx);
+    updateStatus();
 }
 
 void FileView::setViewMode(ViewMode mode) {

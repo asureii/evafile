@@ -80,6 +80,11 @@ void SplitManager::setPath(const QString& path) {
     }
 }
 
+void SplitManager::reload() {
+    if (m_leftView) m_leftView->reload();
+    if (m_rightView && m_isSplit) m_rightView->reload();
+}
+
 void SplitManager::setViewMode(FileView::ViewMode mode) {
     m_leftView->setViewMode(mode);
     m_rightView->setViewMode(mode);

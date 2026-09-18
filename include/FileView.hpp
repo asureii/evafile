@@ -70,6 +70,7 @@ public:
 
     QString currentPath() const { return m_currentPath; }
     void setPath(const QString& path);
+    void reload();
     void setViewMode(ViewMode mode);
     ViewMode viewMode() const { return m_viewMode; }
 

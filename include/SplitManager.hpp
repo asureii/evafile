@@ -19,6 +19,7 @@ public:
     FileView* rightView() const { return m_rightView; }
 
     void setPath(const QString& path);
+    void reload();
     void setViewMode(FileView::ViewMode mode);
     void setShowHidden(bool show);
     void showSearch(bool show);

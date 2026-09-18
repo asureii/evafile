@@ -2,6 +2,7 @@
 #include "FileOperations.hpp"
 #include <QApplication>
 #include <QFontMetrics>
+#include <QTimer>
 
 void DragDropHelper::startDrag(QWidget* sourceWidget, const QStringList& paths, const QIcon& primaryIcon) {
     if (paths.isEmpty() || !sourceWidget) return;
@@ -140,30 +141,44 @@ bool DragDropHelper::executeDrop(QDropEvent* event, const QString& targetDir, QW
         return false;
     }
 
-    // Interactive drop action menu
-    QMenu menu(parentWidget);
-    menu.setStyleSheet(
-        "QMenu { background-color: #25090a; border: 1px solid #cf2824; border-radius: 6px; padding: 4px; }"
-        "QMenu::item { color: #ebdada; padding: 6px 18px; border-radius: 4px; font-weight: bold; font-size: 11px; }"
-        "QMenu::item:selected { background-color: #cf2824; color: #ffffff; }"
-    );
+    // Defer the popup menu to the next event loop cycle so the DND grab is fully released by the window manager
+    QPoint dropPos = QCursor::pos();
+    QTimer::singleShot(0, [sourcePaths, cleanTarget, parentWidget, dropPos]() {
+        bool sameDir = true;
+        for (const QString& src : sourcePaths) {
+            if (QFileInfo(src).absolutePath() != cleanTarget) {
+                sameDir = false;
+                break;
+            }
+        }
 
-    QAction* moveAct = nullptr;
-    if (!sameDir) {
-        moveAct = menu.addAction(QIcon(":/icons/folder.svg"), "Move Here");
-    }
-    QAction* copyAct = menu.addAction(QIcon(":/icons/copy.svg"), "Copy Here");
-    menu.addSeparator();
-    QAction* cancelAct = menu.addAction(QIcon(":/icons/close.svg"), "Cancel");
+        QMenu* menu = new QMenu(parentWidget);
+        menu->setAttribute(Qt::WA_DeleteOnClose);
+        menu->setStyleSheet(
+            "QMenu { background-color: #25090a; border: 1px solid #cf2824; border-radius: 6px; padding: 4px; }"
+            "QMenu::item { color: #ebdada; padding: 6px 18px; border-radius: 4px; font-weight: bold; font-size: 11px; }"
+            "QMenu::item:selected { background-color: #cf2824; color: #ffffff; }"
+            "QMenu::item:disabled { color: #664448; }"
+        );
 
-    QAction* chosen = menu.exec(QCursor::pos());
-    if (chosen == moveAct && moveAct != nullptr) {
-        FileOperations::instance().move(sourcePaths, cleanTarget);
-        return true;
-    } else if (chosen == copyAct) {
-        FileOperations::instance().copy(sourcePaths, cleanTarget);
-        return true;
-    }
+        QAction* moveAct = nullptr;
+        if (!sameDir) {
+            moveAct = menu->addAction(QIcon(":/icons/folder.svg"), "Move Here");
+        } else {
+            moveAct = menu->addAction(QIcon(":/icons/folder.svg"), "Move Here (Already in this folder)");
+            moveAct->setEnabled(false);
+        }
+        QAction* copyAct = menu->addAction(QIcon(":/icons/copy.svg"), "Copy Here");
+        menu->addSeparator();
+        QAction* cancelAct = menu->addAction(QIcon(":/icons/close.svg"), "Cancel");
 
-    return false;
+        QAction* chosen = menu->exec(dropPos);
+        if (chosen == moveAct && moveAct != nullptr && !sameDir) {
+            FileOperations::instance().move(sourcePaths, cleanTarget);
+        } else if (chosen == copyAct) {
+            FileOperations::instance().copy(sourcePaths, cleanTarget);
+        }
+    });
+
+    return true;
 }

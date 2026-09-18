@@ -387,7 +387,7 @@ void MainWindow::onHome() {
 void MainWindow::onReload() {
     SplitManager* sm = currentSplitManager();
     if (sm) {
-        sm->setPath(sm->activeView()->currentPath());
+        sm->reload();
     }
 }
 

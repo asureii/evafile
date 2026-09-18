@@ -142,6 +142,27 @@ private slots:
         QCOMPARE(mime.urls().size(), 1);
         QCOMPARE(mime.urls().first().toLocalFile(), file1);
     }
+
+    void testMoveAndCopyOperations() {
+        QTemporaryDir tempDir;
+        QVERIFY(tempDir.isValid());
+
+        QString subDir = tempDir.path() + "/target_folder";
+        QDir().mkpath(subDir);
+
+        QString srcFile = tempDir.path() + "/test_move.txt";
+        QFile f(srcFile);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write("hello move");
+        f.close();
+
+        // Test FileOperationWorker directly
+        FileOperationWorker moveWorker(FileOperationWorker::OpType::Move, {srcFile}, subDir);
+        moveWorker.run();
+
+        QVERIFY(!QFile::exists(srcFile));
+        QVERIFY(QFile::exists(subDir + "/test_move.txt"));
+    }
 };
 
 QTEST_MAIN(TestEvaFile)
