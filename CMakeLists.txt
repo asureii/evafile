@@ -14,6 +14,9 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Widgets
+    Qml
+    Quick
+    QuickControls2
     Svg
     SvgWidgets
     Multimedia
@@ -47,6 +50,7 @@ set(SOURCES
     src/EvalinkDrawer.cpp
     src/EvalinkDialog.cpp
     src/DragDropHelper.cpp
+    src/EvaFileQmlBridge.cpp
     resources/evafile.qrc
 )
 
@@ -67,6 +71,7 @@ set(HEADERS
     include/EvalinkDrawer.hpp
     include/EvalinkDialog.hpp
     include/DragDropHelper.hpp
+    include/EvaFileQmlBridge.hpp
 )
 
 add_executable(evafile ${SOURCES} ${HEADERS})
@@ -75,6 +80,9 @@ target_link_libraries(evafile PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickControls2
     Qt6::Svg
     Qt6::SvgWidgets
     Qt6::Multimedia

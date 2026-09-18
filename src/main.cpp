@@ -2,10 +2,14 @@
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 #include <QDir>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickStyle>
 #include <iostream>
 #include "MainWindow.hpp"
 #include "ThemeEngine.hpp"
 #include "Config.hpp"
+#include "EvaFileQmlBridge.hpp"
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -22,6 +26,10 @@ int main(int argc, char* argv[]) {
     parser.setApplicationDescription("EvaFile - Modern Dolphin-inspired file manager with Crimson Flame theming");
     parser.addHelpOption();
     parser.addVersionOption();
+
+    QCommandLineOption classicOption("classic", "Use classic Qt Widgets interface instead of modern QML interface.");
+    parser.addOption(classicOption);
+
     parser.addPositionalArgument("directory", "Initial directory to open", "[directory]");
 
     parser.process(app);
@@ -39,11 +47,35 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    MainWindow window;
-    if (!args.isEmpty()) {
+    // Classic Widgets Mode
+    if (parser.isSet(classicOption)) {
+        MainWindow window;
         window.navigateTo(initialPath);
+        window.show();
+        return app.exec();
     }
-    window.show();
+
+    // Modern QML Mode (Default)
+    QQuickStyle::setStyle("Basic");
+
+    qmlRegisterType<EvaFileFolderModel>("org.evafile", 1, 0, "EvaFileFolderModel");
+
+    auto* controller = new EvaFileController(&app);
+    controller->setCurrentPath(initialPath);
+
+    qmlRegisterSingletonInstance<EvaFileController>("org.evafile", 1, 0, "EvaFileController", controller);
+
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("controller", controller);
+
+    const QUrl url(QStringLiteral("qrc:/qml/Main.qml"));
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
+                     &app, [url](QObject *obj, const QUrl &objUrl) {
+        if (!obj && url == objUrl)
+            QCoreApplication::exit(-1);
+    }, Qt::QueuedConnection);
+
+    engine.load(url);
 
     return app.exec();
 }

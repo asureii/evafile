@@ -4,8 +4,10 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
 
 ---
 
-## Features
-
+- **Hybrid QML + C++ Architecture**:
+  - Modern, fluid presentation layer powered by QtQuick / QML with 60/120 FPS kinetic physics, obsidian glassmorphism, interactive 3D perspective tilt cards, and zero idle CPU power gating.
+  - Robust C++20 backend controller and list models driving asynchronous file operations, Evalink aria2c RPC tasks, EvaSuite bridges, and live filesystem watching.
+  - `--classic` CLI flag to launch the classic Qt Widgets desktop interface whenever desired.
 - **Multi-Tab Sessions**: Open tabs with `Ctrl+T`, close with `Ctrl+W`, cycle with `Ctrl+Tab` or `Ctrl+Shift+Tab`, and restore previous sessions on launch.
 - **Dual-Pane Split View (`F3`)**: Browse and transfer between directories side-by-side with synchronized active pane selection and breadcrumb tracking.
 - **Interactive Breadcrumbs (`Ctrl+L`)**: Clickable segment pills for fast directory jumping, with instant inline editing and filesystem path auto-completion.
@@ -50,7 +52,7 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
 | `Alt+Left` / `Alt+Right` | Navigate history back / forward |
 | `Alt+Up` | Navigate to parent directory |
 | `Ctrl+Shift+N` | Create new folder (with rename prompt) |
-| `Ctrl+Alt+N` | Create new file (with rename prompt) |
+| `Ctrl+Alt+N` / `Ctrl+N` | Create new file (with rename prompt) |
 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy / Cut / Paste selected files |
 | `Ctrl+Shift+C` | Copy location / path to clipboard |
 | `Delete` | Move selected items to Trash |
@@ -65,6 +67,7 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
 - **Build System**: CMake 3.20+ and Make
 - **Libraries**:
   - `qt6-base`
+  - `qt6-declarative`
   - `qt6-svg`
   - `qt6-multimedia`
   - `poppler-qt6` (optional, for PDF preview rendering)
@@ -73,7 +76,7 @@ EvaFile is a modern, high-performance C++20 / Qt6 file manager inspired by KDE D
 ### Installing Dependencies on Arch Linux
 
 ```bash
-sudo pacman -S base-devel cmake qt6-base qt6-svg qt6-multimedia poppler-qt6 pkgconf
+sudo pacman -S base-devel cmake qt6-base qt6-declarative qt6-svg qt6-multimedia poppler-qt6 pkgconf
 ```
 
 ---

@@ -43,4 +43,19 @@
     <file alias="music.svg">icons/music.svg</file>
     <file alias="videos.svg">icons/videos.svg</file>
   </qresource>
+  <qresource prefix="/qml">
+    <file alias="Main.qml">qml/Main.qml</file>
+    <file alias="Theme.qml">qml/Theme.qml</file>
+    <file alias="qmldir">qml/qmldir</file>
+    <file alias="IconButton.qml">qml/IconButton.qml</file>
+    <file alias="HeaderBar.qml">qml/HeaderBar.qml</file>
+    <file alias="Sidebar.qml">qml/Sidebar.qml</file>
+    <file alias="FileView.qml">qml/FileView.qml</file>
+    <file alias="PreviewDrawer.qml">qml/PreviewDrawer.qml</file>
+    <file alias="EvalinkDrawer.qml">qml/EvalinkDrawer.qml</file>
+    <file alias="StatusBar.qml">qml/StatusBar.qml</file>
+    <file alias="CreateItemDialog.qml">qml/CreateItemDialog.qml</file>
+    <file alias="EvalinkDialog.qml">qml/EvalinkDialog.qml</file>
+    <file alias="DropActionDialog.qml">qml/DropActionDialog.qml</file>
+  </qresource>
 </RCC>
